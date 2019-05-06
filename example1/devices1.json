@@ -1,0 +1,20 @@
+{
+	"device1": {
+		"class" : "Device_OnOff_Timed",
+		"init" : "2.0, 3600"
+	},
+
+	"device2": {
+		"class" : "Device_OnOff",
+		"init" : "4.0"
+	},
+
+	"scheduler": {
+		"class" : "Device_Scheduler_1",
+		"init" : "-"
+	},
+	"#controller": {
+		"class": "PermissiveController",
+		"init": "-"
+	}
+}

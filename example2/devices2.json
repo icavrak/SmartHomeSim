@@ -1,0 +1,24 @@
+{
+	"stednjak": {
+		"class" : "Device_OnOff",
+		"init" : "40.0"
+	},
+
+	"tv": {
+		"class" : "Device_OnOff",
+		"init" : "4.0"
+	},
+	"sudjerica": {
+		"class": "Device_Delayable_Timed",
+		"init": "20.0, 7200"
+	},
+
+	"scheduler": {
+		"class" : "Device_Scheduler_2",
+		"init" : "-"
+	},
+	"#controller": {
+		"class": "DelayingController",
+		"init": "-"
+	}
+}

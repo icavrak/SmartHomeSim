@@ -1,0 +1,11 @@
+{
+	"devices-file" : "example2/devices2.json",
+	"sim-start-time" : "2019-02-20 00:00:00",
+	"sim-end-time" : "2019-02-21 23:59:59",
+	"sim-time-step" : 60,
+	"pricing-profile" : "PricingProfile_Dual",
+	"pricing-profile-init" : "2.0, 4.0",
+	"price-horizon" : "24",
+	"logfile" : "log.csv",
+	"quiet" : "False"
+}
