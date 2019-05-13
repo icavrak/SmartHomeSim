@@ -33,7 +33,7 @@ class DelayingController(ControllerDevice):
         price_info = simContext.getPriceInfo()
 
         #get utility info object from the request
-        utilityInfo = event.getUtilityInfo()
+        utilityInfo = event.getTargetDevice().getUtilityInfo()
 
         #get current time
         current_time = simContext.getSimCurrentTime()
@@ -50,7 +50,7 @@ class DelayingController(ControllerDevice):
 
             #get the current price
             current_utility = utilityInfo.getUtilityAtTime(current_time, event.getEstimatedDuration())
-            current_price = price_info.getCurrentPrice() * current_utility
+            current_price = price_info.getCurrentPrice()
 
             #check if the future pricing within the allowed start delay period is lower
             #at some point in time (determine the nearest point in time) using the timestep
@@ -60,15 +60,14 @@ class DelayingController(ControllerDevice):
             inspection_step = timedelta(minutes=10)
 
             start_period = 0
-            current_price_utility = current_price * current_utility
+            current_utility_price = current_utility / current_price
             while inspection_step * start_period < inspection_period:
 
                 future_price = price_info.getPriceAtTime(current_time + inspection_step * start_period)
-                price_delta = (current_price - future_price)/current_price
                 future_utility = utilityInfo.getUtilityAtTime(current_time, event.getEstimatedDuration())
-                utiliy_delta = (future_utility - current_utility)/current_utility
+                future_utility_price = future_utility / future_price
 
-                if( price_delta + utiliy_delta > 0 ):
+                if future_utility_price > current_utility_price:
                     break
                 else:
                     start_period = start_period + 1

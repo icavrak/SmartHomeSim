@@ -1,7 +1,8 @@
 from DeviceOffRequestEvent import DeviceOffRequestEvent
 from DeviceOnRequestEvent import DeviceOnRequestEvent
 from SpecialPurposeDevice import SpecialPurposeDevice
-
+from datetime import time
+from datetime import timedelta
 
 class Device_Scheduler_1(SpecialPurposeDevice):
 
@@ -29,7 +30,7 @@ class Device_Scheduler_1(SpecialPurposeDevice):
         event1 = DeviceOnRequestEvent(0, simContext.getDevice("device1"))
 
         #post the "on" event to the event queue
-        simEventScheduler.oneshotToday(9,0,0, event1)
+        simEventScheduler.oneshotToday(time(9,0), event1)
 
 
         #device2 scheduled "on" event
@@ -40,5 +41,5 @@ class Device_Scheduler_1(SpecialPurposeDevice):
         event3 = DeviceOffRequestEvent(0, simContext.getDevice("device2"))
 
         #post those two events to simulation event queue
-        simEventScheduler.oneshotToday(22,0,0, event2)
-        simEventScheduler.oneshotRelativeToEvent(event2, 10800, event3)
+        simEventScheduler.oneshotToday(time(22,0), event2)
+        simEventScheduler.oneshotRelativeToEvent(event2, timedelta(10800), event3)

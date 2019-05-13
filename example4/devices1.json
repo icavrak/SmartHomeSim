@@ -1,0 +1,18 @@
+{
+	"tv": {
+		"class" : "Device_OnOff_Managed",
+		"init" : "2.0"
+	},
+	"grijalica": {
+		"class": "Device_TemperatureControl",
+		"init": "30.0, 10800"
+	},
+	"scheduler": {
+		"class" : "Device_Scheduler_4",
+		"init" : "-"
+	},
+	"#controller": {
+		"class": "DelayingController",
+		"init": "-"
+	}
+}

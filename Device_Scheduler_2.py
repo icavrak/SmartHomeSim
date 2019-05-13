@@ -3,6 +3,7 @@ from DeviceOnRequestEvent import DeviceOnRequestEvent
 from SpecialPurposeDevice import SpecialPurposeDevice
 from PriceInfo import PriceInfo
 from datetime import timedelta
+from datetime import time
 
 
 class Device_Scheduler_2(SpecialPurposeDevice):
@@ -43,31 +44,30 @@ class Device_Scheduler_2(SpecialPurposeDevice):
 
             #post the "on" event for device1 to the event queue
             #device has no start delay tolerance and expected on period is 1 hour
-            simEventScheduler.oneshotToday(17,30,0, event1_on)
-            simEventScheduler.oneshotRelativeToEvent(event1_on, 3600, event1_off)
+            simEventScheduler.oneshotToday(time(17,30), event1_on)
+            simEventScheduler.oneshotRelativeToEvent(event1_on, timedelta(seconds=3600), event1_off)
 
             # post the "on" event for device2 to the event queue (lasts 3 hours)
-            simEventScheduler.oneshotToday(19, 0, 0, event2_on)
-            simEventScheduler.oneshotRelativeToEvent(event2_on, 10800, event2_off)
+            simEventScheduler.oneshotToday(time(19, 0), event2_on)
+            simEventScheduler.oneshotRelativeToEvent(event2_on, timedelta(seconds=10800), event2_off)
 
         else:
 
             # post the "on" event for device1 to the event queue
             # device has no start delay tolerance and expected on period is 2 hours
-            simEventScheduler.oneshotToday(11, 0, 0, event1_on)
-            simEventScheduler.oneshotRelativeToEvent(event1_on, 7200, event1_off)
+            simEventScheduler.oneshotToday(time(11, 0), event1_on)
+            simEventScheduler.oneshotRelativeToEvent(event1_on, timedelta(seconds=7200), event1_off)
 
             # post the "on" event for device1 to the event queue, on for 5 hours
-            simEventScheduler.oneshotToday(18, 0, 0, event2_on)
-            simEventScheduler.oneshotRelativeToEvent(event2_on, 18000, event2_off)
+            simEventScheduler.oneshotToday(time(18, 0), event2_on)
+            simEventScheduler.oneshotRelativeToEvent(event2_on, timedelta(seconds=18000), event2_off)
 
 
 
         # device3 scheduled "on" event, has estimated duration of 2 hours (120mins),
-        # device has expected consumption of 20W, start delay tolerance of 4 hours (240mins) ,
-        # and acitivity must be finished in 10 hours (600mins) from issued request
-        event3 = DeviceOnRequestEvent(0, simContext.getDevice("sudjerica"), timedelta(minutes=120), 20)
+        # device has expected consumption of 20W, and is ambivalent to start, duration and end times
+        event3 = DeviceOnRequestEvent(0, simContext.getDevice("sudjerica"), timedelta(minutes=120), 20.0)
 
         # post the "on" event for device3 to the event queue
-        simEventScheduler.oneshotToday(20, 0, 0, event3)
+        simEventScheduler.oneshotToday(time(20, 0), event3)
 

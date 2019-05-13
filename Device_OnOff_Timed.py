@@ -1,5 +1,6 @@
 from UnmanagedDevice import UnmanagedDevice
 from DeviceOffRequestEvent import DeviceOffRequestEvent
+from datetime import timedelta
 
 import simhelper
 
@@ -45,7 +46,7 @@ class Device_OnOff_Timed(UnmanagedDevice):
         off_event = DeviceOffRequestEvent(0, self)
 
         #post the off request event
-        simEventScheduler.oneshotRelativeToNow(self.__on_duration, off_event)
+        simEventScheduler.oneshotRelativeToNow(timedelta(seconds=self.__on_duration), off_event)
 
 
     def off(self):

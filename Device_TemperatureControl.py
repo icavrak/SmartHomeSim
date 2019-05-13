@@ -2,11 +2,15 @@ from ManagedDevice import ManagedDevice
 from DeviceOffRequestEvent import DeviceOffRequestEvent
 from datetime import timedelta
 
-class Device_Delayable_Timed(ManagedDevice):
+class Device_TemperatureControl(ManagedDevice):
 
     def __init__(self):
-        self.current_consumption = 0
-        self.__on_duration = 0
+        self.__loss_function = None
+        self.__loss_coefficient = 0
+        self.__heat_coefficient = 0
+        self.__heat_power = 0
+        self.__target_function = None
+        self.__utility_function = None
         self.__on = False
 
     def __init__(self, init):
@@ -21,7 +25,14 @@ class Device_Delayable_Timed(ManagedDevice):
         self.__on = False
 
     def getDescription(self):
-        return "Delayable device >" + self.name + "< with constant consumption " + self.current_consumption + "W."
+        return "Delayable device >" + self.getDeviceName() + "< with constant consumption " + self.current_consumption + "W."
+
+
+    def deviceSimInit(self):
+
+        #register additional column in the log file
+        if self.getSimulationContext().getSimLogger() != None:
+            self.getSimulationContext().getSimLogger().registerVariable(self.getDeviceName() + "_temp")
 
     def getCurrentConsumption(self, time):
 

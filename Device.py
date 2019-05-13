@@ -1,11 +1,13 @@
 from abc import abstractmethod
-
+from AmbivalentUtilityInfo import AmbivalentUtilityInfo
+from UtilityInfo import UtilityInfo
 
 class Device:
 
     __simulation = None  # type: SmartHomeSim
     __on = False         # type: bool
     __name = ""          # type: str
+    __utility = AmbivalentUtilityInfo()
 
     ################################
     #
@@ -169,13 +171,13 @@ class Device:
     ################################
     #
     #   Methods for getting
-    #   current user experience
-    #   and experience predictions
+    #   and setting device utility
     #
     ################################
 
-    #default implementation - no experienceInfo
-    #object attached to this device - no predictions
-    #can be supplied to the controller
-    def getUserExperienceInfo(self):
-        return None
+    def setUtilityInfo(self, utilityInfo):
+        assert(isinstance(utilityInfo, UtilityInfo))
+        self.__utility = utilityInfo
+
+    def getUtilityInfo(self):
+        return self.__utility

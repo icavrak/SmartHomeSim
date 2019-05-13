@@ -1,6 +1,7 @@
 from SimulationEvent import SimulationEvent
 from simulator import SmartHomeSim
 from datetime import timedelta
+from Device import Device
 
 class DeviceOnRequestEvent(SimulationEvent):
 
@@ -11,21 +12,23 @@ class DeviceOnRequestEvent(SimulationEvent):
     #   targetDevice            - reference to device the event is related to
     #   estimatedDuration       - hint on how many timedelta the device will run (may not be true, just a hint to the controller)
     #   estimatedConsumption    - estimated consumption in Watts (uniformly spread over the acivity period of the device)
-    #   utilityInfo             - info object providing resulting utiliy of the device action (subclass of UtilityInfo class)
     #   requestingDevice        - reference to the requesting device for this event (scheduler or some other device)
 
-    def __init__(self, timestamp, targetDevice, estimatedDuration=timedelta(minutes=0), estimatedConsumption=0, utilityInfo=None, requestingDevice=None):
+    def __init__(self, timestamp, targetDevice, estimatedDuration=timedelta(minutes=0), estimatedConsumption=float(0), requestingDevice=None):
 
         SimulationEvent.__init__(self, timestamp, self.dispatchRequest)
 
-        #self.time = timestamp
+        assert(isinstance(timestamp, int))
+        assert(targetDevice != None and isinstance(targetDevice, Device))
+        assert(isinstance(estimatedDuration, timedelta))
+        assert (isinstance(estimatedConsumption, float))
+        assert (requestingDevice == None or isinstance(requestingDevice, Device))
+
         self.targetDevice = targetDevice
         self.requestingDeviceName = requestingDevice
 
         self.estimatedDuration = estimatedDuration
         self.estimatedConsumption = estimatedConsumption
-
-        self.utilityInfo = utilityInfo
 
 
     def getCurrentTime(self):
@@ -43,9 +46,6 @@ class DeviceOnRequestEvent(SimulationEvent):
     def getEstimatedConsumption(self):
         return self.estimatedConsumption
 
-
-    def getUtilityInfo(self):
-        return self.utilityInfo
 
     def dispatchRequest(self, self2):
 

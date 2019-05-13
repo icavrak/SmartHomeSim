@@ -13,7 +13,7 @@ from SimulationEvent import SimulationEvent
 from SimTickEvent import SimTickEvent
 from PriceInfo import PriceInfo
 
-import simlogger
+from simlogger import SimLogger
 import simhelper
 
 #######################################################################################################
@@ -38,13 +38,16 @@ class EventScheduler():
     #oneshot event at the current simulated day at specific time
     #returns true if the event has been inserted into the event queue
     #false if not
-    def oneshotToday(self, hour, minute, second, event):
+    def oneshotToday(self, moment, event):
+
+        assert(isinstance(moment, datetime.time))
+        assert (isinstance(event, SimulationEvent))
 
         #get current simulation date
         dateToday = self.__simInstance.getSimCurrentTime()
 
         #form YY-MM-DD HH:MM:SS timestamp
-        newTime = datetime.datetime.combine(dateToday.date(), datetime.time(hour, minute, second))
+        newTime = datetime.datetime.combine(dateToday.date(), moment)
 
         #get UNIX timestamp for the specified datetime
         tstamp = simhelper.create_timestamp(newTime)
@@ -59,6 +62,9 @@ class EventScheduler():
     # oneshot event at the specified dateTime (argument is of datetime type)
     def oneshot(self, dateTime, event):
 
+        assert (isinstance(dateTime, datetime.datetime))
+        assert (isinstance(event, SimulationEvent))
+
         # get UNIX timestamp for the specified datetime
         tstamp = simhelper.create_timestamp(dateTime)
 
@@ -72,6 +78,10 @@ class EventScheduler():
     # oneshot event at the time offset (in sec) relative to the given timestamp (unix secs)
     def oneshotRelativeToTimestamp(self, baseTime, offset, event):
 
+        assert(isinstance(baseTime, int))
+        assert (isinstance(baseTime, int))
+        assert (isinstance(event, SimulationEvent))
+
         #calculate timestamp for the newly scheduled event
         event.setTimestamp(baseTime + offset)
 
@@ -81,12 +91,21 @@ class EventScheduler():
 
     # oneshot event at the time offset (in sec) relative to the given event
     def oneshotRelativeToEvent(self, baseEvent, offset, event):
-        return self.oneshotRelativeToTimestamp(baseEvent.getTimestamp(), offset, event)
+
+        assert (isinstance(baseEvent, SimulationEvent))
+        assert (isinstance(offset, datetime.timedelta))
+        assert (isinstance(event, SimulationEvent))
+
+        return self.oneshotRelativeToTimestamp(baseEvent.getTimestamp(), offset.seconds, event)
 
 
     # oneshot event at the time offset (in sec) relative to the current simulation time
     def oneshotRelativeToNow(self, offset, event):
-        return self.oneshotRelativeToTimestamp(simhelper.create_timestamp(self.__simInstance.getSimCurrentTime()), offset, event)
+
+        assert (isinstance(offset, datetime.timedelta))
+        assert (isinstance(event, SimulationEvent))
+
+        return self.oneshotRelativeToTimestamp(simhelper.create_timestamp(self.__simInstance.getSimCurrentTime()), offset.seconds, event)
 
 
     #once every day at specific time, return: reference list to created and registered events
@@ -303,6 +322,15 @@ class SmartHomeSim():
     def getSimTimeStep(self):
         return self.__setting_sim_time_step
 
+    ######################################################################
+    #
+    #			    Log file accessors
+    #
+    ######################################################################
+    def getSimLogger(self):
+
+        return self.__log_handle
+
 
     ######################################################################
     #
@@ -484,8 +512,12 @@ class SmartHomeSim():
 
         #log data in log file or to console
         if self.__log_handle:
-            simlogger.writeToLog(self.__log_handle, event.getTimestamp(), current_consumption, event.getCurrentPrice(),
-                                 self.__sim_total_consumption, self.__sim_total_price)
+            self.__log_handle.logVariable("timestamp", event.getTimestamp())
+            self.__log_handle.logVariable("consumption", current_consumption)
+            self.__log_handle.logVariable("price", event.getCurrentPrice())
+            self.__log_handle.logVariable("total_consumption", self.__sim_total_consumption)
+            self.__log_handle.logVariable("total_price", self.__sim_total_price)
+            self.__log_handle.writeToLog()
         else:
             simhelper.reportNL(self.__setting_quiet, str(event.getTimestamp()) + ", " + str(current_consumption) + ", " + str(event.getCurrentPrice())
                                + ", " + str(self.__sim_total_consumption) + ", " + str(self.__sim_total_price))
@@ -510,10 +542,14 @@ class SmartHomeSim():
         if self.__loadDevices() == False:
             return False
 
-        # open logfile (if path is defined)
+        # create logfile object (if path is defined) and register log variables
         if self.__log_filename:
-            self.__log_handle = simlogger.openLog(self.__log_filename)
-
+            self.__log_handle = SimLogger()
+            self.__log_handle.registerVariable("timestamp")
+            self.__log_handle.registerVariable("consumption")
+            self.__log_handle.registerVariable("price")
+            self.__log_handle.registerVariable("total_consumption")
+            self.__log_handle.registerVariable("total_price")
 
         #check if all mandatory settings are defined
         if not self.__check_consistency():
@@ -538,9 +574,15 @@ class SmartHomeSim():
             # advance time for the specified simulation time step
             current_time += datetime.timedelta(seconds=self.__setting_sim_time_step)
 
-        # call init for all devices
+        # call init for all devices (new log variables should be registered)
         for deviceName, deviceObject in self.__setting_devices_registry.iteritems():
             deviceObject.deviceSimInit()
+
+        #logfile object - close the initialization phase and open the file
+        if self.__log_handle:
+            self.__log_handle.initialized()
+            self.__log_handle.openLog(self.__log_filename)
+
 
         return True
 
@@ -593,7 +635,7 @@ class SmartHomeSim():
 
         # close logfile (if path is defined)
         if self.__log_handle != None:
-            simlogger.closeLog(self.__log_handle)
+            self.__log_handle.closeLog()
 
         return True
 
