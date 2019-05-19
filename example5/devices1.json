@@ -3,12 +3,12 @@
 		"class" : "Device_OnOff_Managed",
 		"init" : "2.0"
 	},
-	"grijalica": {
+	"bojler": {
 		"class": "Device_TemperatureControl",
-		"init": "1000.0, 0.2, 20.0, 0.2, 0.2, 16.0"
+		"init": "2000.0, 1, 10.0, 1.0, 1.0, 75.0"
 	},
 	"scheduler": {
-		"class" : "Device_Scheduler_4",
+		"class" : "Device_Scheduler_5",
 		"init" : "-"
 	},
 	"#controller": {

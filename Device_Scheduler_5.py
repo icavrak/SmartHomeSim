@@ -9,7 +9,7 @@ from FastOnUtilityInfo import FastOnUtilityInfo
 from CummulativeUtilityInfo import CummulativeUtilityInfo
 
 
-class Device_Scheduler_4(SpecialPurposeDevice):
+class Device_Scheduler_5(SpecialPurposeDevice):
 
     initialized = None
 
@@ -31,13 +31,7 @@ class Device_Scheduler_4(SpecialPurposeDevice):
         #get the scheduler helper object from the context
         simEventScheduler = simContext.getSimEventScheduler()
 
-        #set utilities for devices (UtiliyInfo descendant classes implementing utiliy profiles
-        #of devices (if not set, default utiliy for a device is AmbivalentUtilityInfo)
-        tv_utility = FastOnUtilityInfo(simContext.getSimCurrentTime(), timedelta(seconds=1))
-        simContext.getDevice("tv").setUtilityInfo(tv_utility)
 
-        #heater_utility = RestrictedOffUtilityInfo(time(0, 0), time(9, 0))
-        #simContext.getDevice("grijalica").setUtilityInfo(heater_utility)
 
         ##########################
         #
@@ -58,10 +52,10 @@ class Device_Scheduler_4(SpecialPurposeDevice):
         #   heater on event
         #
         ##########################
-        event4 = DeviceOnRequestEvent(0, simContext.getDevice("grijalica"), timedelta(hours=3), 30.0)
+        #event4 = DeviceOnRequestEvent(0, simContext.getDevice("bojler"), timedelta(hours=3), 30.0)
 
         # post the "on" event for device4 to the event queue
-        simEventScheduler.oneshotToday(time(20, 0), event4)
+        #simEventScheduler.oneshotToday(time(20, 0), event4)
 
 
     #############################################################
@@ -74,39 +68,64 @@ class Device_Scheduler_4(SpecialPurposeDevice):
 
         # get the simulation context object
         simContext = self.getSimulationContext()
-        device = simContext.getDevice("grijalica")
+        device = simContext.getDevice("bojler")
 
-        heater_utility = CummulativeUtilityInfo(device)
-        device.setUtilityInfo(heater_utility)
+        # set utilities for devices (UtiliyInfo descendant classes implementing utiliy profiles
+        # of devices (if not set, default utiliy for a device is AmbivalentUtilityInfo)
+        tv_utility = FastOnUtilityInfo(simContext.getSimCurrentTime(), timedelta(seconds=1))
+        simContext.getDevice("tv").setUtilityInfo(tv_utility)
 
-        #outside temperature
+        heater_utility = CummulativeUtilityInfo(simContext.getDevice("bojler"))
+        simContext.getDevice("bojler").setUtilityInfo(heater_utility)
+
+        #hot water heater capacity (liters)
+        capacity = 80.0
+
+        #hot water temperature consumption (liters)
         def lossF(current_temperature, dtime):
             assert (isinstance(current_temperature, float))
             assert( isinstance(dtime, datetime) )
+
             time = dtime.hour
             time2 = (dtime + timedelta(hours=1)).hour
-            valT = (7.0,7.0,7.0,6.0,4.0,7.0,8.0,10.0,11.0,12.0,14.0,15.0,16.0,16.0,15.0,14.0,12.0,10.0,9.0,8.0,8.0,8.0,8.0,7.0)
-            valM = (-12, - 10, -8, -4, 0, 6, 11, 10, 7, 0, -4, -8)
+
+            if dtime.isoweekday() < 5:
+                valT = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 20.0, 20.0, 10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 30.0, 40.0, 20.0, 30.0, 50.0, 30.0, 20.0, 15.0)
+            else:
+                valT = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 20.0, 20.0, 30.0, 40.0, 40.0, 30.0, 10.0, 10.0, 10.0, 80.0, 80.0, 40.0, 30.0, 10.0, 10.0, 5.0)
+
+
+            #fixed loss of 10% of difference bewtween water temperature and bathroom temperature per hour
+            #fixed_loss = max(current_temperature - 20.0, 0.0) * 0.1
+
+            #fixed loss of 0.26 degrees of celsius per hour
+            fixed_loss = 0.50
+
+            #variable loss of hot water consumption
             val1 = valT[time]
             val2 = valT[time2]
-            val = val1 + (((val2-val1) * dtime.minute) / 60)
+            val = val1 + (((val2 - val1) * dtime.minute) / 60)                           #current hot water consumption in liters
+            new_temperature = val/capacity * 16.0 + (capacity-val)/capacity * current_temperature
 
-            mOffset = dtime.month
-            mOffset2 = (dtime + timedelta(days=31)).month
-            valM1 = valM[mOffset]
-            valM2 = valM[mOffset2]
-            valMO = valM1 + (((valM2-valM1) * dtime.day) / 31)
-            return current_temperature - (val + valMO)
+            return fixed_loss + (current_temperature - new_temperature)
 
+
+        #targeted hot water temperature
         def targetF(current_temperature, dtime):
             assert (isinstance(current_temperature, float))
             assert( isinstance(dtime, datetime) )
             time = dtime.hour
-            if( dtime.isoweekday() < 5 ):
-                valT = (16, 16, 16, 16, 16, 16, 18, 22, 21, 16, 16, 16, 16, 16, 16, 21, 23, 23, 23, 23, 23, 23, 21, 18)
-            else:
-                valT = (16, 16, 16, 16, 16, 16, 18, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 21, 19, 18)
-            return valT[time]
+            #if dtime.isoweekday() < 5:
+            #    valT = (
+            #    30.0, 30.0, 30.0, 30.0, 30.0, 40.0, 50.0, 60.0, 60.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 50.0, 60.0, 60.0, 75.0,
+            #    75.0, 75.0, 60.0, 40.0)
+            #else:
+            #    valT = (
+            #    30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 50.0, 50.0, 50.0, 60.0, 60.0, 60.0, 60.0, 60.0, 60.0, 75.0, 75.0,
+            #    75.0, 75.0, 75.0, 75.0, 60.0, 40.0)
+
+            #return valT[time]
+            return 75.0
 
 
         def utilF(current_temperature, dtime, targetFunction):
@@ -115,11 +134,11 @@ class Device_Scheduler_4(SpecialPurposeDevice):
             assert( callable(targetFunction) )
 
             #calculate utility
-            diffT = max(targetFunction(current_temperature, dtime) - current_temperature, 0)
-            if diffT < 1.0:
+            diffT = max(targetFunction(current_temperature, dtime) - current_temperature, 0) / 10
+            if current_temperature >= 50.0:
                 return 1.0
             else:
-                return 1.0/diffT
+                return 1.0/(51.0-current_temperature)
 
         #set functions to device
         device.setLossFunction(lossF)
