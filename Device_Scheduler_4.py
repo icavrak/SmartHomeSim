@@ -109,7 +109,7 @@ class Device_Scheduler_4(SpecialPurposeDevice):
             time = dtime.hour
 
             #target temperature in degrees celsius (for weekdays and weekends separately)
-            if( dtime.isoweekday() < 5 ):
+            if( dtime.isoweekday() < 6 ):
                 valT = (16, 16, 16, 16, 16, 16, 18, 22, 21, 16, 16, 16, 16, 16, 16, 21, 23, 23, 23, 23, 23, 23, 21, 18)
             else:
                 valT = (16, 16, 16, 16, 16, 16, 18, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 21, 19, 18)

@@ -92,7 +92,7 @@ class Device_Scheduler_5(SpecialPurposeDevice):
             time2 = (dtime + timedelta(hours=1)).hour
 
             #define consumption per hour (weekdays and weekends have different consumption)
-            if dtime.isoweekday() < 5:
+            if dtime.isoweekday() < 6:
                 valT = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 20.0, 20.0, 10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 30.0, 40.0, 20.0, 30.0, 50.0, 30.0, 20.0, 15.0)
             else:
                 valT = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 20.0, 20.0, 30.0, 40.0, 40.0, 30.0, 10.0, 10.0, 10.0, 80.0, 80.0, 40.0, 30.0, 10.0, 10.0, 5.0)
