@@ -75,13 +75,15 @@ class Device_Scheduler_5(SpecialPurposeDevice):
         tv_utility = FastOnUtilityInfo(simContext.getSimCurrentTime(), timedelta(seconds=1))
         simContext.getDevice("tv").setUtilityInfo(tv_utility)
 
+        #set utility object for the heater device
         heater_utility = CummulativeUtilityInfo(simContext.getDevice("bojler"))
         simContext.getDevice("bojler").setUtilityInfo(heater_utility)
 
-        #hot water heater capacity (liters)
+        #hot water heater capacity (liters) TODO: device parameter?
         capacity = 80.0
 
-        #hot water temperature consumption (liters)
+        #loss of heater water temperature as a combination of heat dissipation (fixed) and
+        #hot water consumption (depending on the consumption at a certain time of day)
         def lossF(current_temperature, dtime):
             assert (isinstance(current_temperature, float))
             assert( isinstance(dtime, datetime) )
@@ -89,62 +91,55 @@ class Device_Scheduler_5(SpecialPurposeDevice):
             time = dtime.hour
             time2 = (dtime + timedelta(hours=1)).hour
 
+            #define consumption per hour (weekdays and weekends have different consumption)
             if dtime.isoweekday() < 5:
                 valT = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 20.0, 20.0, 10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 30.0, 40.0, 20.0, 30.0, 50.0, 30.0, 20.0, 15.0)
             else:
                 valT = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 20.0, 20.0, 30.0, 40.0, 40.0, 30.0, 10.0, 10.0, 10.0, 80.0, 80.0, 40.0, 30.0, 10.0, 10.0, 5.0)
 
-
-            #fixed loss of 10% of difference bewtween water temperature and bathroom temperature per hour
-            #fixed_loss = max(current_temperature - 20.0, 0.0) * 0.1
-
-            #fixed loss of 0.26 degrees of celsius per hour
+            #fixed loss of 0.5 degrees of celsius per hour (irrespective of the current water temperature)
             fixed_loss = 0.50
 
             #variable loss of hot water consumption
             val1 = valT[time]
             val2 = valT[time2]
-            val = val1 + (((val2 - val1) * dtime.minute) / 60)                           #current hot water consumption in liters
+
+            # current hot water consumption in liters
+            val = val1 + (((val2 - val1) * dtime.minute) / 60)
+
+            #new temeperature as a result of mixing hot and (new) cold water
             new_temperature = val/capacity * 16.0 + (capacity-val)/capacity * current_temperature
 
             return fixed_loss + (current_temperature - new_temperature)
 
 
-        #targeted hot water temperature
+        #targeted hot water temperature - heater always tries to maitain 75 degrees Celsius
         def targetF(current_temperature, dtime):
             assert (isinstance(current_temperature, float))
             assert( isinstance(dtime, datetime) )
-            time = dtime.hour
-            #if dtime.isoweekday() < 5:
-            #    valT = (
-            #    30.0, 30.0, 30.0, 30.0, 30.0, 40.0, 50.0, 60.0, 60.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 50.0, 60.0, 60.0, 75.0,
-            #    75.0, 75.0, 60.0, 40.0)
-            #else:
-            #    valT = (
-            #    30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 50.0, 50.0, 50.0, 60.0, 60.0, 60.0, 60.0, 60.0, 60.0, 75.0, 75.0,
-            #    75.0, 75.0, 75.0, 75.0, 60.0, 40.0)
 
-            #return valT[time]
             return 75.0
 
 
+        #return the utility of the current water temperature in the heater
         def utilF(current_temperature, dtime, targetFunction):
             assert (isinstance(current_temperature, float))
             assert( isinstance(dtime, datetime) )
             assert( callable(targetFunction) )
 
-            #calculate utility
-            diffT = max(targetFunction(current_temperature, dtime) - current_temperature, 0) / 10
-            if current_temperature >= 50.0:
-                return 1.0
-            else:
-                return 1.0/(51.0-current_temperature)
+            #utility linearly drops with the water temperature
+            #from 1 to 0 (from 65 to 15 degrees)
+            utility = current_temperature / 50.0 - 0.3
+            if utility > 1.0:
+                utility = 1.0
+            return utility
 
         #set functions to device
         device.setLossFunction(lossF)
         device.setTargetFunction(targetF)
         device.setUtilityFunction(utilF)
 
+        #initialize utilityInfo with the same functions
         utilInfo = device.getUtilityInfo()
         assert( isinstance(utilInfo, CummulativeUtilityInfo) )
         utilInfo.setLossFunction(lossF)

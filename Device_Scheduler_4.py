@@ -76,10 +76,11 @@ class Device_Scheduler_4(SpecialPurposeDevice):
         simContext = self.getSimulationContext()
         device = simContext.getDevice("grijalica")
 
+        # set utility object for the heater device
         heater_utility = CummulativeUtilityInfo(device)
         device.setUtilityInfo(heater_utility)
 
-        #outside temperature
+        #model of outside temperature in 24 hours
         def lossF(current_temperature, dtime):
             assert (isinstance(current_temperature, float))
             assert( isinstance(dtime, datetime) )
@@ -91,6 +92,7 @@ class Device_Scheduler_4(SpecialPurposeDevice):
             val2 = valT[time2]
             val = val1 + (((val2-val1) * dtime.minute) / 60)
 
+            #changes of outside temperature offset during different months of year
             mOffset = dtime.month
             mOffset2 = (dtime + timedelta(days=31)).month
             valM1 = valM[mOffset]
@@ -98,34 +100,48 @@ class Device_Scheduler_4(SpecialPurposeDevice):
             valMO = valM1 + (((valM2-valM1) * dtime.day) / 31)
             return current_temperature - (val + valMO)
 
+
+        #room temperature target function
         def targetF(current_temperature, dtime):
             assert (isinstance(current_temperature, float))
             assert( isinstance(dtime, datetime) )
+
             time = dtime.hour
+
+            #target temperature in degrees celsius (for weekdays and weekends separately)
             if( dtime.isoweekday() < 5 ):
                 valT = (16, 16, 16, 16, 16, 16, 18, 22, 21, 16, 16, 16, 16, 16, 16, 21, 23, 23, 23, 23, 23, 23, 21, 18)
             else:
                 valT = (16, 16, 16, 16, 16, 16, 18, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 21, 19, 18)
             return valT[time]
 
-
+        #utility function
         def utilF(current_temperature, dtime, targetFunction):
             assert (isinstance(current_temperature, float))
             assert( isinstance(dtime, datetime) )
             assert( callable(targetFunction) )
 
-            #calculate utility
-            diffT = max(targetFunction(current_temperature, dtime) - current_temperature, 0)
-            if diffT < 1.0:
+            #calculate difference between current and targeted temperature
+            diffT = targetFunction(current_temperature, dtime) - current_temperature
+
+            #if the temperature is higher than targeted for more than 2 degrees (overshoot),
+            # lower utility to 0.8
+            if diffT <= -2.0:
+                return 0.8
+
+            #if the temperature is up to 1 degree lower than targeted, utility is 1
+            elif diffT <= 1.0:
                 return 1.0
+            #else the drop in utility is linear with the temperature difference
             else:
-                return 1.0/diffT
+                return 1.0 - max(diffT/20.0, 1.0)
 
         #set functions to device
         device.setLossFunction(lossF)
         device.setTargetFunction(targetF)
         device.setUtilityFunction(utilF)
 
+        # initialize utilityInfo with the same functions
         utilInfo = device.getUtilityInfo()
         assert( isinstance(utilInfo, CummulativeUtilityInfo) )
         utilInfo.setLossFunction(lossF)
