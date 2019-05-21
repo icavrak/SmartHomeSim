@@ -58,6 +58,17 @@ class Device:
     def getCurrentConsumption(self, time):
         pass
 
+    ################################
+    #
+    #   Device utility
+    #
+    ################################
+
+    #get device current utility
+    def getCurrentUtility(self, time):
+        return 0.0
+
+
 
     ####################################
     #

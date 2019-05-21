@@ -210,6 +210,7 @@ class SmartHomeSim():
 
     __sim_total_consumption   = 0.0
     __sim_total_price         = 0.0
+    __sim_total_utility       = 0.0
 
     __sim_pricing_profile = None
 
@@ -494,8 +495,9 @@ class SmartHomeSim():
     # observed simulation period determined by "sim-time-period" simulation parameter
     def __consumption(self, event):
 
-        #variable for aggregating total consumption
+        #variables for aggregating total consumption and utility
         current_consumption = 0.0
+        current_utility = 0.0
 
         #for each device in the device registry
         for device in self.__setting_devices_registry:
@@ -503,12 +505,16 @@ class SmartHomeSim():
             #get current consumption [Watts]
             current_consumption += self.__setting_devices_registry[device].getCurrentConsumption(self.__sim_current_time)
 
+            # get current utility
+            current_utility += self.__setting_devices_registry[device].getCurrentUtility(self.__sim_current_time)
+
         #calculate total consumption for time period (according to simulation step) [Watt hours]
         total_consumption_delta = current_consumption * self.__setting_sim_time_step / 3600.0
 
         #calculate aggregate values
         self.__sim_total_consumption += total_consumption_delta
         self.__sim_total_price += total_consumption_delta * event.getCurrentPrice()
+        self.__sim_total_utility += current_utility
 
         #log data in log file or to console
         if self.__log_handle:
@@ -517,6 +523,7 @@ class SmartHomeSim():
             self.__log_handle.logVariable("price", event.getCurrentPrice())
             self.__log_handle.logVariable("total_consumption", self.__sim_total_consumption)
             self.__log_handle.logVariable("total_price", self.__sim_total_price)
+            self.__log_handle.logVariable("total_utility", self.__sim_total_utility)
             self.__log_handle.writeToLog()
         else:
             simhelper.reportNL(self.__setting_quiet, str(event.getTimestamp()) + ", " + str(current_consumption) + ", " + str(event.getCurrentPrice())
@@ -550,6 +557,7 @@ class SmartHomeSim():
             self.__log_handle.registerVariable("price")
             self.__log_handle.registerVariable("total_consumption")
             self.__log_handle.registerVariable("total_price")
+            self.__log_handle.registerVariable("total_utility")
 
         #check if all mandatory settings are defined
         if not self.__check_consistency():

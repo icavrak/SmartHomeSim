@@ -132,6 +132,9 @@ class Device_Scheduler_5(SpecialPurposeDevice):
             utility = current_temperature / 50.0 - 0.3
             if utility > 1.0:
                 utility = 1.0
+            if utility < 0.0:
+                utility = 0.0
+
             return utility
 
         #set functions to device

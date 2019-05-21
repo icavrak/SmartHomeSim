@@ -110,8 +110,9 @@ class Device_TemperatureControl(ManagedDevice):
         self.getSimulationContext().getSimLogger().logVariable(self.getDeviceName() + "_temp", self.__current_temperature)
         self.getSimulationContext().getSimLogger().logVariable(self.getDeviceName() + "_target", self.__target_function(self.__current_temperature, time))
         self.getSimulationContext().getSimLogger().logVariable(self.getDeviceName() + "_loss", self.__loss_function(self.__current_temperature, time))
-        self.getSimulationContext().getSimLogger().logVariable(self.getDeviceName() + "_utility", self.__utility_function(
-            self.__current_temperature, time, self.__target_function))
+        self.getSimulationContext().getSimLogger().logVariable(self.getDeviceName() + "_utility", self.getCurrentUtility(time))
+
+        #self.__utility_function(self.__current_temperature, time, self.__target_function))
 
 
         #determine current heating power and report it
@@ -143,6 +144,13 @@ class Device_TemperatureControl(ManagedDevice):
 
         #return current power consumption (valid for last time delta period)
         return power
+
+    #get device current utility
+    def getCurrentUtility(self, time):
+
+        assert (isinstance(time, datetime))
+
+        return self.__utility_function(self.__current_temperature, time, self.__target_function)
 
 
     def on(self):

@@ -58,10 +58,10 @@ class Device_Scheduler_4(SpecialPurposeDevice):
         #   heater on event
         #
         ##########################
-        event4 = DeviceOnRequestEvent(0, simContext.getDevice("grijalica"), timedelta(hours=3), 30.0)
+        #event4 = DeviceOnRequestEvent(0, simContext.getDevice("grijalica"), timedelta(hours=3), 30.0)
 
         # post the "on" event for device4 to the event queue
-        simEventScheduler.oneshotToday(time(20, 0), event4)
+        #simEventScheduler.oneshotToday(time(20, 0), event4)
 
 
     #############################################################
@@ -126,15 +126,21 @@ class Device_Scheduler_4(SpecialPurposeDevice):
 
             #if the temperature is higher than targeted for more than 2 degrees (overshoot),
             # lower utility to 0.8
+            utility = 0.0
             if diffT <= -2.0:
-                return 0.8
+                utility = 0.8
 
             #if the temperature is up to 1 degree lower than targeted, utility is 1
             elif diffT <= 1.0:
-                return 1.0
+                utility =  1.0
             #else the drop in utility is linear with the temperature difference
             else:
-                return 1.0 - max(diffT/20.0, 1.0)
+                utility =  1.0 - max(diffT/20.0, 1.0)
+
+            if utility < 0.0:
+                utility = 0.0
+
+            return utility
 
         #set functions to device
         device.setLossFunction(lossF)
